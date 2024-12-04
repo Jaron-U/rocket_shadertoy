@@ -176,7 +176,7 @@ function loadTextures(gl) {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                // gl.generateMipmap(gl.TEXTURE_2D);
+                gl.generateMipmap(gl.TEXTURE_2D);
                 resolve();
             };
         });
@@ -323,7 +323,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec4 border_color= vec4(0.0,0.0,0.0, 1.0);
     vec4 spec= vec4(1.0,1.0,0.0, 1.0);
     vec4 ambi= vec4(0.10,0.20,0.70, 1.0);
-    vec4 diff= vec4(0.90,0.70,0.20, 1.0);
+    //vec4 diff= vec4(0.90,0.70,0.20, 1.0);
     vec4 img0 = texture2D(iChannel0, uv);
     vec4 img1=  texture2D(iChannel1, uv);
     vec4 Ks=texture2D(iChannel2, uv);
@@ -351,11 +351,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     t=step2(0.1,0.99,t);
     s=step2(0.99,1.0,s);
-    vec4 border=texture2D(iChannel3,uv);
+    vec4 diff=texture2D(iChannel3,uv);
+    ambi=0.8*diff;
 
     col = ambi*(1.0-t)+diff*t; 
     col= col*(1.0-Ks)+Ks*max(0.3*reflected_env,s*spec); 
-    col = (1.0-border)*border_color+ border*col;
+    //col = (1.0-border)*border_color+ border*col;
 
     fragColor = vec4(col.rgb, 1.0);    // Output to screen
 }
