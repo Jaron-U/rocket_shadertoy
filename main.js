@@ -54,7 +54,7 @@ const programInfo = {
 const buffers = initBuffers(gl);
 
 // Load textures (modified to handle video texture for iChannel3)
-loadTextures(gl).then(({ textures, video }) => {
+loadTextures(gl).then(({ textures, video3 }) => {
     // Track mouse position
     let mouseX = 0;
     let mouseY = 0;
@@ -62,6 +62,7 @@ loadTextures(gl).then(({ textures, video }) => {
         const rect = canvas.getBoundingClientRect();
         mouseX = e.clientX - rect.left;
         mouseY = canvas.height - (e.clientY - rect.top);
+
     });
 
     // Draw the scene repeatedly
@@ -71,7 +72,7 @@ loadTextures(gl).then(({ textures, video }) => {
         const deltaTime = now - then;
         then = now;
 
-        updateVideoTexture(gl, textures[3], video);
+        updateVideoTexture(gl, textures[3], video3);
 
         drawScene(gl, programInfo, buffers, textures, now, mouseX, mouseY);
 
@@ -153,7 +154,7 @@ function initBuffers(gl) {
 function loadTextures(gl) {
     const textures = [];
     const promises = [];
-
+    
     // Load images for iChannel0 to iChannel2
     for (let i = 0; i < 3; i++) {
         const texture = gl.createTexture();
@@ -182,23 +183,21 @@ function loadTextures(gl) {
         });
 
         // Provide your own images for iChannel0 to iChannel2
-        image.src = `./final_assets/texture${i}.png`;
+        image.src = `./final_assets/iChannel${i}.png`;
         textures.push(texture);
         promises.push(promise);
     }
 
     // Load video texture for iChannel3
-    const videoTexture = gl.createTexture();
-    const video = setupVideo('./final_assets/video.mp4');
-
+    const videoTexture3 = gl.createTexture();
+    const video3 = setupVideo('./final_assets/iChannel3.mp4');
     // Set up the texture parameters
-    gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+    gl.bindTexture(gl.TEXTURE_2D, videoTexture3);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-    textures.push(videoTexture);
+    textures.push(videoTexture3);
 
     return Promise.all(promises).then(() => {
-        return { textures, video };
+        return { textures, video3 };
     });
 }
 
@@ -315,7 +314,6 @@ float step2( float min, float max, float x )
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    // vec2 uv = fragCoord/iResolution.xy; // Normalized pixel coordinates
     vec2 uv = fragCoord.xy / iResolution.xy;
     uv.y = 1.0 - uv.y;
 
@@ -323,7 +321,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec4 border_color= vec4(0.0,0.0,0.0, 1.0);
     vec4 spec= vec4(1.0,1.0,0.0, 1.0);
     vec4 ambi= vec4(0.10,0.20,0.70, 1.0);
-    //vec4 diff= vec4(0.90,0.70,0.20, 1.0);
     vec4 img0 = texture2D(iChannel0, uv);
     vec4 img1=  texture2D(iChannel1, uv);
     vec4 Ks=texture2D(iChannel2, uv);
@@ -348,14 +345,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     vec2 reflected_uv= (reflect.xy*d/(reflect.z+0.1)+fragCoord+lightpos.xy)/iResolution.xy;
     vec4 reflected_env= texture2D(iChannel1, reflected_uv);
+    // reflected_uv.y = 1.0 - reflected_uv.y;
 
     t=step2(0.1,0.99,t);
     s=step2(0.99,1.0,s);
     vec4 diff=texture2D(iChannel3,uv);
-    ambi=0.8*diff;
+    ambi=vec4(0.1, 0.2, 0.2, 0.1)*diff;
 
     col = ambi*(1.0-t)+diff*t; 
-    col= col*(1.0-Ks)+Ks*max(0.3*reflected_env,s*spec); 
+    col= col*(1.0-Ks)+Ks*max(0.8*reflected_env,s*spec); 
     //col = (1.0-border)*border_color+ border*col;
 
     fragColor = vec4(col.rgb, 1.0);    // Output to screen
